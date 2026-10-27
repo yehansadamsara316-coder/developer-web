@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEVELOPER WEB</title>
+    <link rel="icon" href="/IMG/logos/main.logo/developer_web_youtube_icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        :root {
+            --turmeric: #e3a021;
+            --turmeric-dark: #b97c12;
+            --chili: #c8401f;
+            --leaf: #2f5233;
+            --cream: #faf3e3;
+            --ink: #26221b;
+            --paper: #fffdf8;
+            --primary: #d97706;
+            --radius-lg: 24px;
+            --font-display: 'Baloo 2', cursive;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --bg: #0a0d14;
+            --surface: #111520;
+            --card: #161b27;
+            --border: #1e2535;
+            --accent: #00d9ff;
+            --accent2: #7b5ea7;
+            --green: #00e5a0;
+            --red: #ff4d6a;
+            --yellow: #f5c518;
+            --text: #e4e8f0;
+            --muted: #6b7896;
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'Inter', sans-serif;
+            --display: 'Space Grotesk', sans-serif;
+            --radius: 10px;
+            --transition: .22s ease;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* LIVE BACKGROUND */
+        .live-bg-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden;
+        }
+        .live-bg-video { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.65) contrast(1.1); }
+        .live-bg-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, rgba(10, 13, 20, 0.3) 0%, rgba(10, 13, 20, 0.85) 100%);
+        }
+
+        /* LOADING SCREEN */
+        #loader-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #0a0d14;
+            z-index: 99999; display: flex; justify-content: center; align-items: center; transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+        #loader-screen.fade-out { opacity: 0; visibility: hidden; }
+        .loader-card {
+            background: rgba(17, 21, 32, 0.95); border: 1px solid #1e2535; padding: 40px; border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; backdrop-filter: blur(10px);
+            max-width: 90vw;
+        }
+        .ring-container { position: relative; width: 100px; height: 100px; display: flex; justify-content: center; align-items: center; }
+        .ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 3px solid transparent; border-top-color: #00d9ff; animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; }
+        .ring::before { content: ''; position: absolute; top: -3px; left: -3px; right: -3px; bottom: -3px; border-radius: 50%; border: 3px solid transparent; border-top-color: #7b5ea7; animation: spin 3s linear infinite reverse; }
+        .logo-img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid #00d9ff; box-shadow: 0 0 15px rgba(0, 217, 255, 0.4); }
+        .loader-title { color: #e4e8f0; font-size: 22px; font-weight: 600; letter-spacing: 2px; }
+        .loader-title span { color: #00d9ff; }
+        .progress-box { width: 220px; max-width: 100%; height: 6px; background: #161b27; border-radius: 10px; overflow: hidden; border: 1px solid #1e2535; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #00d9ff, #7b5ea7, #00e5a0); border-radius: 10px; animation: fillBar 2.5s ease-in-out forwards; }
+        .status-text { color: #6b7896; font-family: var(--mono); font-size: 13px; letter-spacing: 1px; }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes fillBar { 0% { width: 0%; } 100% { width: 100%; } }
+
+        /* MAIN LAYOUT & RESPONSIVE NAVIGATION */
+        #main-content { opacity: 0; transition: opacity 1s ease; position: relative; z-index: 1; }
+        #main-content.active { opacity: 1; }
+
+        .nav-container {
+            position: fixed; top: 20px; left: 0; right: 0; z-index: 1000; padding: 0 15px;
+        }
+        .nav {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(17, 21, 32, 0.85);
+            backdrop-filter: blur(12px);
+            max-width: 1200px;
+            margin: 0 auto;
+            border-radius: 50px;
+            padding: 10px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .first-h1 { color: white; font-family: Impact, sans-serif; font-size: 22px; margin: 0; }
+        .first-h2 { color: #00d9ff; font-family: cursive; font-size: 22px; margin: 0; }
+        .nav-links { display: flex; align-items: center; gap: 10px; list-style: none; margin: 0; padding: 0; }
+        .nav-links a {
+            padding: 8px 16px; border-radius: 999px; font-size: 0.9rem; font-weight: 600; color: #00d9ff;
+            transition: all 0.2s ease; text-decoration: none; display: flex; align-items: center; gap: 6px;
+        }
+        .nav-links a:hover { background: rgba(0, 217, 255, 0.15); color: #fff; }
+
+        /* HERO SECTION */
+        .hero-section {
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+            align-items: center; text-align: center; padding: 140px 20px 60px;
+        }
+        .sec-h1 { font-family: var(--sans); font-size: clamp(36px, 6vw, 75px); font-weight: 800; line-height: 1.15; margin-bottom: 20px; }
+        .gradient {
+            background: linear-gradient(90deg, #00d9ff, #7b5ea7, #00e5a0); background-size: 200% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shine 3s linear infinite;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        .hero-sub { color: #c8cdd7; font-size: clamp(15px, 2vw, 18px); max-width: 650px; margin: 0 auto 30px; line-height: 1.6; }
+        .hero-btns { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 12px 24px; border-radius: var(--radius); font-size: 14px; font-weight: 600;
+            cursor: pointer; border: none; transition: all var(--transition); text-decoration: none;
+        }
+        .btn-primary { background: linear-gradient(135deg, #004bcc, var(--accent)); color: #fff; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0, 217, 255, 0.4); color: #fff; }
+        .btn-outline-ghost { border: 1px solid var(--border); color: white; backdrop-filter: blur(5px); background: rgba(255,255,255,0.05); }
+        .btn-outline-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* GENERAL SECTION STYLING */
+        section { padding: 80px 20px; max-width: 1200px; margin: 0 auto; }
+        .section-title-wrapper { text-align: center; margin-bottom: 40px; }
+        .section-label { font-family: var(--mono); font-size: 13px; color: var(--accent); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 8px; }
+        .section-title { font-family: var(--display); font-size: clamp(28px, 4vw, 48px); font-weight: 700; color: #fff; }
+
+        .hero-art { width: 100%; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.15); }
+
+        /* GRID LAYOUTS */
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+        .select-box {
+            border: 1px solid var(--border); background: var(--card); border-radius: 20px; padding: 25px;
+            display: flex; flex-direction: column; align-items: center; text-align: center; gap: 15px; transition: transform var(--transition);
+        }
+        .select-box:hover { transform: translateY(-5px); border-color: var(--accent); }
+        .select-box img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
+        .select-box h3 { font-size: 20px; font-weight: 700; margin: 0; }
+
+        /* TECH STACK */
+        .tech-scroll { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        .tech-tag { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+
+        /* PORTFOLIO GRID */
+        .portfolio-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+        .project-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+        .project-thumb { width: 100%; height: 220px; object-fit: cover; }
+        .project-info { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+        .project-info h3 { font-family: var(--display); font-size: 18px; margin-bottom: 8px; color: #fff; }
+        .project-info p { color: var(--muted); font-size: 13px; margin-bottom: 16px; line-height: 1.6; flex: 1; }
+        .project-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+        .project-tag { background: rgba(0,217,255,.08); color: var(--accent); border-radius: 5px; padding: 4px 10px; font-size: 11px; font-family: var(--mono); }
+
+        /* ORDER FORM */
+        .order-section { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 40px 25px; }
+        .form-group { margin-bottom: 18px; }
+        .form-control-custom {
+            width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 12px 16px; color: var(--text); font-size: 14px; outline: none; transition: border-color var(--transition);
+        }
+        .form-control-custom:focus { border-color: var(--accent); }
+
+        /* AI CHAT WIDGET STYLES */
+        .ai-widget-btn {
+            position: fixed; bottom: 25px; right: 25px; width: 60px; height: 60px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: #fff;
+            font-size: 24px; cursor: pointer; box-shadow: 0 8px 24px rgba(0, 217, 255, 0.4); z-index: 2000;
+            display: flex; align-items: center; justify-content: center; transition: transform 0.2s;
+        }
+        .ai-widget-btn:hover { transform: scale(1.08); }
+
+        .ai-chat-window {
+            position: fixed; bottom: 95px; right: 25px; width: 360px; max-width: calc(100vw - 40px); height: 480px;
+            background: var(--card); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            z-index: 2000; display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(16px);
+        }
+        .ai-chat-window.hidden { display: none; }
+        .ai-chat-header { background: var(--surface); padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .ai-chat-header h4 { font-family: var(--display); font-size: 15px; margin: 0; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .ai-chat-close { background: transparent; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+        .ai-chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .ai-message { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; word-break: break-word; }
+        .ai-message.user { align-self: flex-end; background: linear-gradient(135deg, var(--accent), #0099cc); color: #000; font-weight: 500; }
+        .ai-message.bot { align-self: flex-start; background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+        .ai-chat-input-area { padding: 12px; background: var(--surface); border-top: 1px solid var(--border); display: flex; gap: 8px; }
+        .ai-chat-input-area input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; color: var(--text); font-size: 13px; outline: none; }
+        .ai-chat-input-area button { background: var(--accent); border: none; border-radius: var(--radius); padding: 8px 14px; cursor: pointer; color: #000; font-weight: 600; }
+
+        /* FOOTER */
+        footer { border-top: 1px solid var(--border); padding: 30px 20px; text-align: center; color: var(--muted); font-size: 14px; }
+
+        /* MOBILE MEDIA QUERIES */
+        @media (max-width: 768px) {
+            .nav { flex-direction: column; gap: 12px; padding: 12px 18px; border-radius: 20px; }
+            .nav-links { width: 100%; justify-content: center; flex-wrap: wrap; font-size: 0.85rem; }
+            .hero-section { padding-top: 180px; }
+            .order-section { padding: 25px 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LIVE BACKGROUND WALLPAPER -->
+    <div class="live-bg-container">
+        <video autoplay loop muted playsinline class="live-bg-video">
+            <source src="/VIDEO/YTDown.com_YouTube_Black-Abstract-Background-Video-Black-Li_Media_7Qj6Kz7YkJk_001_1080p.mp4" type="video/mp4">
+        </video>
+        <div class="live-bg-overlay"></div>
+    </div>
+
+    <!-- LOADING SCREEN -->
+    <div id="loader-screen">
+        <div class="loader-card">
+            <div class="ring-container">
+                <div class="ring"></div>
+                <img src="/IMG/logos/main.logo/developer_web_youtube_icon.png" alt="Logo" class="logo-img">
+            </div>
+            <h1 class="loader-title">DEVELOPER <span>WEB</span></h1>
+            <div class="progress-box"><div class="progress-bar"></div></div>
+            <p class="status-text">INITIALIZING...</p>
+        </div>
+    </div>
+
+    <!-- MAIN WEBSITE CONTENT -->
+    <div id="main-content">
+        <!-- NAVIGATION -->
+        <div class="nav-container">
+            <nav class="nav">
+                <a href="#display" class="nav-brand">
+                    <img src="/IMG/logos/main.logo/developer_web_youtube_icon.png" style="width: 38px; height: 38px; border-radius: 50%;">
+                    <span class="first-h1">DEVELOPER</span>
+                    <span class="first-h2">WEB</span>
+                </a>
+                <ul class="nav-links">
+                    <li><a href="#display">HOME</a></li>
+                    <li><a href="#about">ABOUT</a></li>
+                    <li><a href="#portfolio"><i class="fa-solid fa-user-plus"></i> STAFF</a></li>
+                    <li><a href="#oder"><i class="fa-solid fa-cart-shopping"></i> ORDER NOW</a></li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- HERO DISPLAY -->
+        <section class="hero-section" id="display">
+            <h1 class="sec-h1">Where <span class="gradient">Developers</span> <br> Build the Future...</h1>
+            <p class="hero-sub">
+                Ship faster with a platform built by engineers, for engineers. APIs, deployment, collaboration, and monitoring — all in one place.
+            </p>
+            <div class="hero-btns">
+                <a href="#oder" class="btn btn-primary">🚀 Start Building Free</a>
+                <a href="#about" class="btn btn-outline-ghost">⚡️ ABOUT</a>
+            </div>
+        </section>
+
+        <!-- ABOUT SECTION -->
+        <section id="about">
+            <div class="section-title-wrapper">
+                <div class="section-label">// ABOUT</div>
+                <h2 class="section-title">Our Developer Platform</h2>
+            </div>
+            <video controls crossorigin="anonymous" class="hero-art">
+                <source src="/VIDEO/about.video/give_me_a_video_for_a_add_this.mp4" type="video/mp4">
+            </video>
+        </section>
+
+        <!-- CATEGORIES SECTION -->
+        <section>
+            <div class="section-title-wrapper">
+                <div class="section-label">// SERVICES</div>
+                <h2 class="first-h2" style="font-size: clamp(32px, 5vw, 55px);">YOUR CHOICE</h2>
+            </div>
+            <div class="category-grid">
+                <div class="select-box">
+                    <img src="/IMG/logos/971.jpg" alt="Web Dev">
+                    <h3>WEB DEVELOPMENT</h3>
+                    <a href="#oder" class="btn btn-primary" style="width: 100%;">ORDER NOW</a>
+                </div>
+                <div class="select-box">
+                    <img src="/IMG/logos/19362653.jpg" alt="Web Design">
+                    <h3>WEB DESIGNING</h3>
+                    <a href="#oder" class="btn btn-primary" style="width: 100%;">ORDER NOW</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- TECH STACK -->
+        <section id="tech">
+            <div class="section-title-wrapper">
+                <div class="section-label">// TECH STACK</div>
+                <h2 class="section-title">Built with modern tools</h2>
+            </div>
+            <div class="tech-scroll">
+                <span class="tech-tag">JavaScript</span>
+                <span class="tech-tag">TypeScript</span>
+                <span class="tech-tag">React</span>
+                <span class="tech-tag">Next.js</span>
+                <span class="tech-tag">Node.js</span>
+                <span class="tech-tag">Python</span>
+                <span class="tech-tag">Go</span>
+                <span class="tech-tag">Docker</span>
+                <span class="tech-tag">AWS</span>
+            </div>
+        </section>
+
+        <!-- STAFF PORTFOLIO -->
+        <section id="portfolio">
+            <div class="section-title-wrapper">
+                <div class="section-label">// TEAM</div>
+                <h2 class="first-h2" style="font-size: clamp(32px, 5vw, 55px);">OUR STAFF</h2>
+            </div>
+            <div class="portfolio-grid">
+                <div class="project-card">
+                    <img src="/IMG/CAPTER.IMG/Screen Shot 2026-08-08 at 08.44.17.png" class="project-thumb">
+                    <div class="project-info">
+                        <h3>YEHAN HANSAKA</h3>
+                        <p>Strong UX, reliable engineering, and polished execution. Product launch and technical partner.</p>
+                        <div class="project-tags"><span class="project-tag">HTML/CSS/JS</span><span class="project-tag">GO</span><span class="project-tag">NODE.JS</span></div>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <img src="/IMG/Gemini_Generated_Image_9jka6m9jka6m9jka.png" class="project-thumb">
+                    <div class="project-info">
+                        <h3>YEHANSA DAMSARA</h3>
+                        <p>Frontend and backend developer of Developer Web site.</p>
+                        <div class="project-tags"><span class="project-tag">HTML/CSS/JS</span><span class="project-tag">PYTHON</span><span class="project-tag">NODE.JS</span></div>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <img src="/IMG/Gemini_Generated_Image_9jka6m9jka6m9jka.png" class="project-thumb">
+                    <div class="project-info">
+                        <h3>DINUK NILASARA</h3>
+                        <p>UI/UX designer for Developer Web custom experiences.</p>
+                        <div class="project-tags"><span class="project-tag">ADOBE PS</span><span class="project-tag">FIGMA</span><span class="project-tag">LINUX</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ORDER SECTION -->
+        <section id="oder">
+            <div class="order-section">
+                <div class="section-title-wrapper" style="margin-bottom: 25px;">
+                    <h2 class="section-title">ORDER NOW</h2>
+                </div>
+                <form style="max-width: 600px; margin: 0 auto;">
+                    <div class="form-group">
+                        <input type="text" id="name" class="form-control-custom" placeholder="Your Name *" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="phone" class="form-control-custom" placeholder="Your Contact Number *" required>
+                    </div>
+                    <div class="form-group">
+                        <select id="methord" class="form-control-custom">
+                            <option value="FULL-STACK DEVELOPMENT">FULL-STACK DEVELOPMENT</option>
+                            <option value="Frontend Development">Frontend Development</option>
+                            <option value="Backend Development">Backend Development</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="about" class="form-control-custom" placeholder="About your build..." style="height: 120px;"></textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary" style="width: 100%; font-size: 16px;" onclick="gotowhatsapp()">Submit Order</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- OUR WEBSITES -->
+        <section id="our">
+            <div class="section-title-wrapper">
+                <h2 class="first-h2" style="font-size: clamp(32px, 5vw, 55px);">OUR WEB SITES</h2>
+            </div>
+            <div class="portfolio-grid">
+                <div class="project-card">
+                    <img src="/IMG/3764142.jpg" class="project-thumb">
+                    <div class="project-info">
+                        <h3>PRINCE ONLINE CANTEEN</h3>
+                        <p>Sri Lanka's first school online canteen system.</p>
+                        <a href="#oder" class="btn btn-primary" style="width: fit-content; margin-top: 10px;">LEARN MORE</a>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <img src="/IMG/bacground.img/programmer-night.jpg" class="project-thumb">
+                    <div class="project-info">
+                        <h3>YEHANSA DAMSARA</h3>
+                        <p>Web developer, designer, and web seller portal.</p>
+                        <a href="#oder" class="btn btn-primary" style="width: fit-content; margin-top: 10px;">LEARN MORE</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <p>© 2026 Developer Web UI by <a href="#" style="color: var(--accent); text-decoration: none;">[YEHANSA DAMSARA]</a></p>
+        </footer>
+    </div>
+
+    <!-- AI WIDGET -->
+    <button class="ai-widget-btn" onclick="toggleAIChat()" title="Ask AI Assistant">
+        <i class="fa-solid fa-robot"></i>
+    </button>
+
+    <div class="ai-chat-window hidden" id="aiChatWindow">
+        <div class="ai-chat-header">
+            <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Developer Assistant</h4>
+            <button class="ai-chat-close" onclick="toggleAIChat()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="ai-message bot">
+                Hello! I am the Developer Web Assistant. How can I help you today?
+            </div>
+        </div>
+        <div class="ai-chat-input-area">
+            <input type="text" id="aiUserInput" placeholder="Ask a question..." onkeypress="handleAIKeyPress(event)">
+            <button onclick="sendAIMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Page loader handling
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loaderScreen = document.getElementById('loader-screen');
+                const mainContent = document.getElementById('main-content');
+                if (loaderScreen) loaderScreen.classList.add('fade-out');
+                if (mainContent) mainContent.classList.add('active');
+            }, 1000);
+        });
+
+        // WhatsApp Ordering Logic
+        function gotowhatsapp() {
+            var name = document.getElementById("name").value;
+            var phone = document.getElementById("phone").value;
+            var methord = document.getElementById("methord").value;
+            var about = document.getElementById("about").value;
+
+            if (!name || !phone) {
+                alert("please fill in your name and contact number.");
+                return;
+            }
+
+            var url = "https://wa.me/94711816576?text=" 
+                + "Name: " + encodeURIComponent(name) + "%0a"
+                + "Phone: " + encodeURIComponent(phone) + "%0a"
+                + "Method: " + encodeURIComponent(methord) + "%0a"
+                + "About: " + encodeURIComponent(about);
+
+            window.open(url, '_blank').focus();
+        }
+
+        // AI Chatbox Controls
+        function toggleAIChat() {
+            const chatWin = document.getElementById('aiChatWindow');
+            chatWin.classList.toggle('hidden');
+        }
+
+        function handleAIKeyPress(e) {
+            if (e.key === 'Enter') sendAIMessage();
+        }
+
+        async function sendAIMessage() {
+            const input = document.getElementById('aiUserInput');
+            const msgBox = document.getElementById('aiChatMessages');
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            // Render User Prompt
+            msgBox.innerHTML += `<div class="ai-message user">${prompt}</div>`;
+            input.value = '';
+            msgBox.scrollTop = msgBox.scrollHeight;
+
+            // Render Loading State
+            const loadingId = 'bot-' + Date.now();
+            msgBox.innerHTML += `<div class="ai-message bot" id="${loadingId}">Thinking...</div>`;
+            msgBox.scrollTop = msgBox.scrollHeight;
+
+            // 2. Display "Submit is successful" Message
+            statusMsg.className = "status-msg status-success";
+            statusMsg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Submit is successful!';
+            statusMsg.style.display = "block";
+
+            try {
+                const res = await fetch('http://localhost:5000/api/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+                const data = await res.json();
+                document.getElementById(loadingId).innerText = data.answer || "No response received.";
+            } catch (err) {
+                document.getElementById(loadingId).innerText = "Backend API Error. Make sure app.py is running.";
+            }
+            msgBox.scrollTop = msgBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
